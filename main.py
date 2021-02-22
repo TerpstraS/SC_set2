@@ -10,7 +10,7 @@ def main():
 
     N = 100     # lattice size
     dla_monte_carlo(N)
-    dla_prob_model(N)
+    dla_prob_model(N, eta=1)
 
     return
 

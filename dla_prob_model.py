@@ -3,12 +3,14 @@ import numba
 import matplotlib.pyplot as plt
 
 
-def dla_prob_model(N):
+def dla_prob_model(N, eta):
     """DLA model using growth probability
 
     Args:
         N (int): lattice size
     """
+
+    n = 100   # total simulation steps
 
     # start with analytical solution for domain, with at y = 1, c = 1
     c = np.array([[j/(N-1) for j in range(N)] for i in range(N)])
@@ -18,9 +20,19 @@ def dla_prob_model(N):
     objects[N//2][0] = 1
     c[N//2][0] = 0
 
-    c_new = sor(c, objects, omega=1.8)
+    # perform simulation
+    for i in range(n):
 
-    plt.matshow(c_new)
+        # perform sor iteration to determine new nutrient field
+        c = sor(c, objects, omega=1.8)
+
+        # determine growth candidates
+
+        # calculate growth probabilities
+
+        # choose growth location and add location to objects
+
+    plt.matshow(c)
     plt.colorbar()
     plt.show()
     return

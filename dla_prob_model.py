@@ -157,10 +157,12 @@ def dla_prob_model(N, eta):
     plt.matshow(objects)
     plt.title("DLA object $\eta = {}$\n".format(eta))
     plt.colorbar()
+    plt.savefig("results/DLA_object_eta{}_N{}.png".format(eta, N))
 
     plt.matshow(c)
     plt.title("DLA diffusion plot $\eta = {}$\n".format(eta))
     plt.colorbar()
+    plt.savefig("results/DLA_diffusion_eta{}_N{}.png".format(eta, N))
     plt.show()
 
     return

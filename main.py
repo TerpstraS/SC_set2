@@ -9,11 +9,16 @@ from dla_prob_model import dla_prob_model
 def main():
 
     N = 100             # lattice size
-    n_steps = 100       # number of simulation steps
+    n_steps = 500       # number of simulation steps
     delta = 1           # eta in dla_prob_model
 
     dla_prob_model(N, n_steps, delta)
-    # dla_monte_carlo(N)
+
+    ## TODO: implement monte carlo model
+    dla_monte_carlo(N)
+
+    ## TODO: implement Gray-Scott model
+    gray_scott()
 
     return
 

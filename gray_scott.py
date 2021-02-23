@@ -3,6 +3,24 @@ import numba
 import matplotlib.pyplot as plt
 
 
+def discrete_diffusion(c_u, c_v, dt, dx, f, k, D_u, D_v):
+    """Discrete diffusion solved time dependently
+
+    Args:
+        c_u (2D nparray): concentration of u at each coordinate
+        c_v (2D nparray): concentration of v at each coordinate
+
+    Returns:
+        c_u (2D nparray): concentration of u at each coordinate
+        c_v (2D nparray): concentration of v at each coordinate
+
+    """
+    c_diff_u = (dt*D_u/(dx**2))
+    c_diff_v = (dt*D_v/(dx**2))
+
+    return c_u, c_v
+
+
 @numba.njit
 def discrete_diffusion_step(c, c_diffusion):
     """Discrete diffusion solved time dependently for a single time step
@@ -25,8 +43,27 @@ def discrete_diffusion_step(c, c_diffusion):
     return c_new
 
 
-def gray_scott():
-    """Gray-Scott model """
-    print("Gray-Scott model.")
+def gray_scott(N):
+    """Gray-Scott model
+
+    Args:
+        N (int): lattice size
+
+    """
+    print("Gray-Scott model with N = {}.".format(N))
+
+    dt = 1
+    dx = 1
+    D_u = 0.16
+    D_v = 0.08
+    f = 0.035
+    k = 0.060
+
+    c_u = np.zeros((N, N))
+    c_v = np.zeros((N, N))
+
+    c_u, c_v = discrete_diffusion(c_u, c_v, dt, dx, f, k, D_u, D_v)
+
+    print("")
 
     return

@@ -8,7 +8,10 @@ def dla_monte_carlo(N):
 
     Args:
         N (int): lattice size
+
     """
-    print("DLA Monte Carlo model.")
+    print("DLA Monte Carlo model with N = {}.".format(N))
+
+    print("")
 
     return

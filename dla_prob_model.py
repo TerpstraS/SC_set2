@@ -6,12 +6,13 @@ import tqdm
 
 
 @numba.njit
-def get_growth_candidates(N, objects):
-    """Finds all growth candidates i.e. all empty lattice points north, east, south west of each
-    object that are free
+def get_growth_candidates(N, c, objects):
+    """Find all growth candidates i.e. all empty lattice points north, east, south west of each
+    object that are free and have non-zero concentration
 
     Args:
         N (int): lattice size
+        c (2D nparray): concentration at each coordinate
         objects (2D nparray): array of whole grid space. Value of 1 means object, 0 means no object
 
     Returns:
@@ -32,7 +33,10 @@ def get_growth_candidates(N, objects):
 
                     # check if neighbour doesn't lay outside boundaries
                     if j_cand >= 0 and j_cand < N-1:
-                        candidates.append([i_cand, j_cand])
+
+                        # check if c != 0, and thus if there is a growth probability
+                        if c[i_cand, j_cand] > 0:
+                            candidates.append([i_cand, j_cand])
 
     return np.array(candidates)
 
@@ -50,10 +54,11 @@ def get_growth_probabilities(c, candidates, eta):
         probabilities (1D nparray): growth probabilities of each corresponding coordinate
 
     """
-    total = np.sum(np.array([c[i, j]**eta for i, j in candidates]))
-    if total <= 0:
-        return np.empty(0)
-    probabilities = np.array([c[i, j]**eta/total for i, j in candidates])
+    if eta == 0:
+        probabilities = np.array([1/len(candidates) for candidate in candidates])
+    else:
+        total = np.sum(np.array([c[i, j]**eta for i, j in candidates]))
+        probabilities = np.array([c[i, j]**eta/total for i, j in candidates])
 
     return probabilities
 
@@ -101,7 +106,7 @@ def dla_prob_model(N, eta):
         eta (float (0, 2)): parameter to change form of object
 
     """
-    print("DLA probability model with eta = {}.".format(eta))
+    print("DLA probability model with eta = {}, N = {}.".format(eta, N))
 
     # start with analytical solution for domain, with at y = 1, c = 1
     c = np.array([[j/(N-1) for j in range(N)] for i in range(N)])
@@ -120,7 +125,7 @@ def dla_prob_model(N, eta):
         c = sor(c, objects, omega=1.8)
 
         # determine growth candidates
-        candidates = get_growth_candidates(N, objects)
+        candidates = get_growth_candidates(N, c, objects)
 
         # if no candidates, stop program, growth limit reached
         if len(candidates) == 0:

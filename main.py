@@ -9,7 +9,7 @@ from gray_scott import gray_scott
 def main():
 
     N = 100             # lattice size
-    eta = 1           # eta in dla_prob_model
+    eta = 1           # eta in dla_prob_model, everything runs quite fast, except eta = 0
 
     dla_prob_model(N, eta)
 

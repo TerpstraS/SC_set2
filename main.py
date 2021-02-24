@@ -16,9 +16,8 @@ def main():
     N = 100      # lattice size
     dla_monte_carlo(N)
 
-    ## TODO: implement Gray-Scott model
-    N = 100      # lattice size
-    gray_scott(N)
+    # Gray-Scott model
+    gray_scott()
 
     return
 

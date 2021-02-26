@@ -203,7 +203,7 @@ def dla_prob_model():
     plt.title("DLA simulation time over the lattice size $\eta={}$".format(eta))
     plt.errorbar(Ns, sim_times_means, yerr=sim_times_conf_int, color="orange", fmt="none", zorder=0)
     plt.scatter(Ns, sim_times_means, color="blue", s=15)
-    plt.xlabel("Lattice side N")
+    plt.xlabel("Lattice size $N$")
     plt.ylabel("Time (s)")
     plt.tight_layout()
     plt.savefig("results/DLA_prob/DLA_time_N_eta{}.png".format(eta))

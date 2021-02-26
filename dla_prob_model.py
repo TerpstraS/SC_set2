@@ -41,7 +41,7 @@ def get_growth_candidates(N, c, objects):
     return np.array(candidates)
 
 
-@numba.njit
+@numba.njit()
 def get_growth_probabilities(c, candidates, eta):
     """Calculate growth probability for each candidate according to growth probabilities formula
 
@@ -63,7 +63,7 @@ def get_growth_probabilities(c, candidates, eta):
     return probabilities
 
 
-@numba.njit
+@numba.njit()
 def sor(c, objects, omega=1.7):
     """Successive Over Relaxation (SOR)
 
@@ -79,7 +79,9 @@ def sor(c, objects, omega=1.7):
     c_new = np.copy(c)
     delta = np.inf
     eps = 1e-5
+    n_iters = 0
     while delta > eps:
+        n_iters += 1
         for i in range(len(c)):
             for j in range(1, len(c[0])-1):
                 if objects[i, j] == 1:
@@ -94,10 +96,10 @@ def sor(c, objects, omega=1.7):
         delta = np.max(np.abs(c_new - c))
         c = np.copy(c_new)
 
-    return c_new
+    return c_new, n_iters
 
 
-def dla_prob_model(N, eta):
+def run_dla_prob_model(N, eta, omega=1.8):
     """DLA model using growth probability. Simulation continues until one object reaches to
     the y-limit (N - 1)
 
@@ -106,7 +108,7 @@ def dla_prob_model(N, eta):
         eta (float (0, 2)): parameter to change form of object
 
     """
-    print("DLA probability model with eta = {}, N = {}.".format(eta, N))
+    print("DLA probability model with eta, N:", eta, N)
 
     # start with analytical solution for domain, with at y = 1, c = 1
     c = np.array([[j/(N-1) for j in range(N)] for i in range(N)])
@@ -116,13 +118,16 @@ def dla_prob_model(N, eta):
     objects[N//2][0] = 1
     c[N//2][0] = 0
 
-    time_start = time.time()
+    n_iters = 0
+    n_iters_sor = 0
 
     # perform simulation
     while True:
+        n_iters += 1
 
         # perform sor iteration to determine new nutrient field
-        c = sor(c, objects, omega=1.8)
+        c, n_temp = sor(c, objects, omega)
+        n_iters_sor += n_temp
 
         # determine growth candidates
         candidates = get_growth_candidates(N, c, objects)
@@ -141,8 +146,7 @@ def dla_prob_model(N, eta):
             break
 
         # choose growth location and add location to objects
-        index = np.random.choice(np.linspace(0, len(candidates)-1, len(candidates), dtype=int),
-            p=probabilities)
+        index = np.random.choice(len(candidates), p=probabilities)
 
         objects[candidates[index][0], candidates[index][1]] = 1
         c[candidates[index][0], candidates[index][1]] = 0       # set c=0 on object
@@ -152,17 +156,92 @@ def dla_prob_model(N, eta):
             print("Reached maximum growth height.")
             break
 
-    print("DLA probability model simulation time: {:.2f} seconds.\n".format(time.time() - time_start))
+    return c, objects, n_iters_sor / n_iters
+
+
+def dla_prob_model():
+
+    N = 100
+    eta = 1
+    omega = 1.8
+
+    # perform model ones, to get the functions compiled, otherwise the timing is of for the
+    # first iteration of calculating the simulation time
+    run_dla_prob_model(10, 1)
+
+    c, objects, *_ = run_dla_prob_model(N, eta)
 
     plt.matshow(objects)
-    plt.title("DLA object $\eta = {}$\n".format(eta))
+    plt.title("DLA object $N={}$, $\eta = {}$\n".format(N, eta))
     plt.colorbar()
-    plt.savefig("results/DLA_object_eta{}_N{}.png".format(eta, N))
+    plt.savefig("results/DLA_object_N{}_eta{}.png".format(N, eta))
 
     plt.matshow(c)
-    plt.title("DLA diffusion plot $\eta = {}$\n".format(eta))
+    plt.title("DLA diffusion plot $N={}$, $\eta = {}$\n".format(N, eta))
     plt.colorbar()
-    plt.savefig("results/DLA_diffusion_eta{}_N{}.png".format(eta, N))
+    plt.savefig("results/DLA_diffusion_N{}_eta{}.png".format(N, eta))
+
+    time_start = time.time()
+
+    # simulation time as a function of lattice size N
+    n_reps = 5
+    Ns = np.linspace(10, 150, 15, dtype=int)
+    sim_times = np.zeros((len(Ns), n_reps))
+    print("Time:{}".format(15*10*6/60))
+    for i, N in enumerate(Ns):
+        for rep in range(n_reps):
+            time_start_N = time.time()
+            run_dla_prob_model(N, eta, omega)
+            sim_times[i, rep] = time.time() - time_start_N
+
+    # calculate statistics
+    sim_times_means = [np.mean(i) for i in sim_times]
+    sim_times_conf_int = [(np.std(i, ddof=1) * 1.96) / np.sqrt(n_reps) for i in sim_times]
+
+    plt.figure()
+    plt.rcParams.update({"font.size": 14})
+    plt.title("DLA simulation time over the lattice size $\eta={}$".format(eta))
+    plt.errorbar(Ns, sim_times_means, yerr=sim_times_conf_int, color="orange", fmt="none", zorder=0)
+    plt.scatter(Ns, sim_times_means, color="blue", s=15)
+    plt.xlabel("Lattice side N")
+    plt.ylabel("Time (s)")
+    plt.tight_layout()
+    plt.savefig("results/DLA_prob/DLA_time_N_eta{}.png".format(eta))
+
+    # number of iterations as a function of omega and lattice size
+    n_reps = 5
+    Ns = [10, 50, 100, 150]
+    omegas = np.linspace(1, 1.9, 20, dtype=float)
+
+    plt.figure()
+    plt.rcParams.update({"font.size": 14})
+    plt.title("DLA simulation iterations over $\omega$, $\eta={}$".format(eta))
+    fmts = ["^", "x", "v", "s", "+", "d"]
+    for j, N in enumerate(Ns):
+        sim_n_iters_omega = np.zeros((len(omegas), n_reps))
+
+
+        for i, omega in enumerate(omegas):
+            for rep in range(n_reps):
+                *_, n_iters_omega = run_dla_prob_model(N, eta, omega)
+                sim_n_iters_omega[i, rep] = n_iters_omega
+
+        # calculate statistics
+        sim_n_iters_omega_means = [np.mean(i) for i in sim_n_iters_omega]
+        sim_n_iters_omega_conf_int = [(np.std(i, ddof=1) * 1.96) / np.sqrt(n_reps) for i in sim_n_iters_omega]
+
+
+        plt.errorbar(omegas, sim_n_iters_omega_means, yerr=sim_n_iters_omega_conf_int, capsize=3,
+                    fmt=fmts[j], zorder=0, label="$N={}$".format(N))
+
+    plt.xlabel("$\omega$")
+    plt.ylabel("Number of iterations SOR method")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("results/DLA_prob/DLA_vary_omega_vary_N_eta{}.png".format(eta))
+
+    print("DLA probability model simulation time: {:.2f} seconds.\n".format((time.time() - time_start)))
+
     plt.show()
 
     return

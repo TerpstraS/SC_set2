@@ -8,11 +8,9 @@ from gray_scott import gray_scott
 
 def main():
 
-    N = 100      # lattice size
-    eta = 1      # eta in dla_prob_model, everything runs quite fast, except eta = 0
-    dla_prob_model(N, eta)
+    dla_prob_model()
 
-    ## TODO: implement monte carlo model
+    # TODO: implement monte carlo model
     N = 100      # lattice size
     dla_monte_carlo(N)
 

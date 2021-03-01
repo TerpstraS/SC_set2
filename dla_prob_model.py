@@ -172,10 +172,16 @@ def dla_prob_model():
 
     c, objects, *_ = run_dla_prob_model(N, eta)
 
-    plt.matshow(objects)
+    fig, ax = plt.subplots()
+    plt.rcParams.update({"font.size": 14})
+    ax.matshow(objects.T, origin="lower", extent=[0., 1., 0., 1.])
+    ax.xaxis.tick_bottom()
+    ax.set_xlabel("x")
+    ax.yaxis.tick_left()
+    ax.set_ylabel("y")
+    fig.tight_layout()
     plt.title("DLA object $N={}$, $\eta = {}$\n".format(N, eta))
-    plt.colorbar()
-    plt.savefig("results/DLA_object_N{}_eta{}.png".format(N, eta))
+    plt.savefig("results/DLA_prob/DLA_object_N{}_eta{}.png".format(N, eta))
 
     plt.matshow(c)
     plt.title("DLA diffusion plot $N={}$, $\eta = {}$\n".format(N, eta))
@@ -202,7 +208,6 @@ def dla_prob_model():
     axs[0, 0].set_ylabel("y")
     fig.tight_layout(pad=0)
     plt.savefig("results/DLA_prob/DLA_vary_eta.png")
-    plt.show()
 
     time_start = time.time()
 

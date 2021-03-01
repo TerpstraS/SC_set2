@@ -153,7 +153,6 @@ def run_dla_prob_model(N, eta, omega=1.8):
 
         # check if maximum height is reached
         if candidates[index][1] == N - 2:
-            print("Reached maximum growth height.")
             break
 
     return c, objects, n_iters_sor / n_iters
@@ -161,11 +160,13 @@ def run_dla_prob_model(N, eta, omega=1.8):
 
 def dla_prob_model():
 
+    plt.rcParams.update({"font.size": 14})
+
     N = 100
     eta = 1
     omega = 1.8
 
-    # perform model ones, to get the functions compiled, otherwise the timing is of for the
+    # perform model ones, to get the functions compiled, otherwise the timing is off for the
     # first iteration of calculating the simulation time
     run_dla_prob_model(10, 1)
 
@@ -180,6 +181,28 @@ def dla_prob_model():
     plt.title("DLA diffusion plot $N={}$, $\eta = {}$\n".format(N, eta))
     plt.colorbar()
     plt.savefig("results/DLA_diffusion_N{}_eta{}.png".format(N, eta))
+
+    # create nice DLA plot of 4 different eta values
+    fig, axs = plt.subplots(2, 2, sharey=True, sharex=True)
+    plt.rcParams.update({"font.size": 14})
+    im = None
+    etas = [0.25, 0.75, 1.25, 1.75]
+    for i, ax in enumerate(axs.flatten()):
+        im = ax.matshow(run_dla_prob_model(N, etas[i])[1].T, origin="lower", extent=[0., 1., 0., 1.])
+        ax.set_title("DLA $\eta={}$".format(etas[i]))
+
+    # fig.colorbar(im, ax=axs.ravel().tolist())
+    axs[1, 0].xaxis.tick_bottom()
+    axs[1, 0].set_xlabel("x")
+    axs[1, 1].xaxis.tick_bottom()
+    axs[1, 1].set_xlabel("x")
+    axs[1, 0].yaxis.tick_left()
+    axs[1, 0].set_ylabel("y")
+    axs[0, 0].yaxis.tick_left()
+    axs[0, 0].set_ylabel("y")
+    fig.tight_layout(pad=0)
+    plt.savefig("results/DLA_prob/DLA_vary_eta.png")
+    plt.show()
 
     time_start = time.time()
 
@@ -245,3 +268,7 @@ def dla_prob_model():
     plt.show()
 
     return
+
+
+if __name__ == '__main__':
+    dla_prob_model()

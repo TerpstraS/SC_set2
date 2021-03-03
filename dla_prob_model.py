@@ -160,6 +160,8 @@ def run_dla_prob_model(N, eta, omega=1.8):
 
 def dla_prob_model():
 
+    time_start = time.time()
+
     plt.rcParams.update({"font.size": 14})
 
     N = 100
@@ -192,7 +194,7 @@ def dla_prob_model():
     fig, axs = plt.subplots(2, 2, sharey=True, sharex=True)
     plt.rcParams.update({"font.size": 14})
     im = None
-    etas = [0.25, 0.75, 1.25, 1.75]
+    etas = [0, 0.66, 1.33, 2]
     for i, ax in enumerate(axs.flatten()):
         im = ax.matshow(run_dla_prob_model(N, etas[i])[1].T, origin="lower", extent=[0., 1., 0., 1.])
         ax.set_title("DLA $\eta={}$".format(etas[i]))
@@ -208,8 +210,7 @@ def dla_prob_model():
     axs[0, 0].set_ylabel("y")
     fig.tight_layout(pad=0)
     plt.savefig("results/DLA_prob/DLA_vary_eta.png")
-
-    time_start = time.time()
+    plt.show()
 
     # simulation time as a function of lattice size N
     n_reps = 5
@@ -237,7 +238,7 @@ def dla_prob_model():
     plt.savefig("results/DLA_prob/DLA_time_N_eta{}.png".format(eta))
 
     # number of iterations as a function of omega and lattice size
-    n_reps = 5
+    n_reps = 30
     Ns = [10, 50, 100, 150]
     omegas = np.linspace(1, 1.9, 20, dtype=float)
 
@@ -267,6 +268,35 @@ def dla_prob_model():
     plt.legend()
     plt.tight_layout()
     plt.savefig("results/DLA_prob/DLA_vary_omega_vary_N_eta{}.png".format(eta))
+
+
+    # object size as function of eta
+    etas = np.linspace(0.1, 2, 20)
+    n_reps = 5
+    N = 100
+    plt.figure()
+    plt.rcParams.update({"font.size": 14})
+    plt.title("DLA simulation object size over $\eta$, $N={}$".format(N))
+    fmts = ["^", "x", "v", "s", "+", "d"]
+    objects_sizes = np.zeros((len(etas), n_reps))
+    for i, eta in enumerate(etas):
+        for rep in range(n_reps):
+            _, objects, _ = run_dla_prob_model(N, eta)
+
+            objects_sizes[i, rep] = np.sum(np.array([object for object in objects]))
+
+    # calculate statistics
+    objects_sizes_means = [np.mean(i) for i in objects_sizes]
+    objects_sizes_conf_int = [(np.std(i, ddof=1) * 1.96) / np.sqrt(n_reps) for i in objects_sizes]
+
+    plt.errorbar(etas, objects_sizes_means, yerr=objects_sizes_conf_int, capsize=3,
+                fmt="o", zorder=0)
+
+    plt.xlabel("$\eta$")
+    plt.ylabel("Size of cluster")
+    # plt.legend()
+    plt.tight_layout()
+    plt.savefig("results/DLA_prob/DLA_var_eta_object_size.png")
 
     print("DLA probability model simulation time: {:.2f} seconds.\n".format((time.time() - time_start)))
 

@@ -238,8 +238,8 @@ def dla_prob_model():
     plt.savefig("results/DLA_prob/DLA_time_N_eta{}.png".format(eta))
 
     # number of iterations as a function of omega and lattice size
-    n_reps = 30
-    Ns = [10, 50, 100, 150]
+    n_reps = 2
+    Ns = [10, 20, 50, 100, 150, 200]
     omegas = np.linspace(1, 1.9, 20, dtype=float)
 
     plt.figure()

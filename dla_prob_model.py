@@ -108,7 +108,7 @@ def run_dla_prob_model(N, eta, omega=1.8):
         eta (float (0, 2)): parameter to change form of object
 
     """
-    print("DLA probability model with eta, N:", eta, N)
+    # print("DLA probability model with eta, N:", eta, N)
 
     # start with analytical solution for domain, with at y = 1, c = 1
     c = np.array([[j/(N-1) for j in range(N)] for i in range(N)])
@@ -216,7 +216,6 @@ def dla_prob_model():
     n_reps = 5
     Ns = np.linspace(10, 150, 15, dtype=int)
     sim_times = np.zeros((len(Ns), n_reps))
-    print("Time:{}".format(15*10*6/60))
     for i, N in enumerate(Ns):
         for rep in range(n_reps):
             time_start_N = time.time()
@@ -238,19 +237,20 @@ def dla_prob_model():
     plt.savefig("results/DLA_prob/DLA_time_N_eta{}.png".format(eta))
 
     # number of iterations as a function of omega and lattice size
-    n_reps = 2
-    Ns = [10, 20, 50, 100, 150, 200]
-    omegas = np.linspace(1, 1.9, 20, dtype=float)
+    n_reps = 10 # 30
+    Ns = [10, 50] # [10, 20, 50, 100, 150, 200]
+    omegas = [1.7, 1.8] #np.linspace(1, 1.9, 20, dtype=float)
 
     plt.figure()
     plt.rcParams.update({"font.size": 14})
     plt.title("DLA simulation iterations over $\omega$, $\eta={}$".format(eta))
     fmts = ["^", "x", "v", "s", "+", "d"]
-    for j, N in enumerate(Ns):
+    for j, N in tqdm.tqdm(enumerate(Ns)):
         sim_n_iters_omega = np.zeros((len(omegas), n_reps))
 
 
-        for i, omega in enumerate(omegas):
+        for i in tqdm.tqdm(range(len(omegas))):
+            omega = omegas[i]
             for rep in range(n_reps):
                 *_, n_iters_omega = run_dla_prob_model(N, eta, omega)
                 sim_n_iters_omega[i, rep] = n_iters_omega
@@ -264,37 +264,38 @@ def dla_prob_model():
                     fmt=fmts[j], zorder=0, label="$N={}$".format(N))
 
     plt.xlabel("$\omega$")
-    plt.ylabel("Number of iterations SOR method")
+    plt.ylabel("Average number of iterations SOR")
     plt.legend()
     plt.tight_layout()
     plt.savefig("results/DLA_prob/DLA_vary_omega_vary_N_eta{}.png".format(eta))
 
-
     # object size as function of eta
-    etas = np.linspace(0.1, 2, 20)
-    n_reps = 5
-    N = 100
+    etas = np.linspace(0, 2, 15)
+    n_reps = 30
+    Ns = [10, 20, 50, 100, 125]
     plt.figure()
     plt.rcParams.update({"font.size": 14})
     plt.title("DLA simulation object size over $\eta$, $N={}$".format(N))
     fmts = ["^", "x", "v", "s", "+", "d"]
-    objects_sizes = np.zeros((len(etas), n_reps))
-    for i, eta in enumerate(etas):
-        for rep in range(n_reps):
-            _, objects, _ = run_dla_prob_model(N, eta)
+    for j, N in enumerate(Ns):
+        objects_sizes = np.zeros((len(etas), n_reps))
+        for i, eta in enumerate(etas):
+            print("\nSimulation with N = {}, eta = {}".format(N, eta))
+            for rep in tqdm.tqdm(range(n_reps)):
+                _, objects, _ = run_dla_prob_model(N, eta)
 
-            objects_sizes[i, rep] = np.sum(np.array([object for object in objects]))
+                objects_sizes[i, rep] = np.sum(np.array([object for object in objects]))
 
-    # calculate statistics
-    objects_sizes_means = [np.mean(i) for i in objects_sizes]
-    objects_sizes_conf_int = [(np.std(i, ddof=1) * 1.96) / np.sqrt(n_reps) for i in objects_sizes]
+        # calculate statistics
+        objects_sizes_means = [np.mean(i) for i in objects_sizes]
+        objects_sizes_conf_int = [(np.std(i, ddof=1) * 1.96) / np.sqrt(n_reps) for i in objects_sizes]
 
-    plt.errorbar(etas, objects_sizes_means, yerr=objects_sizes_conf_int, capsize=3,
-                fmt="o", zorder=0)
+        plt.errorbar(etas, objects_sizes_means, yerr=objects_sizes_conf_int, capsize=3,
+                    fmt=fmts[j], zorder=0, label="$N={}$".format(N))
 
     plt.xlabel("$\eta$")
     plt.ylabel("Size of cluster")
-    # plt.legend()
+    plt.legend()
     plt.tight_layout()
     plt.savefig("results/DLA_prob/DLA_var_eta_object_size.png")
 

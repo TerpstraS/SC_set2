@@ -2,6 +2,8 @@ import numpy as np
 import numba
 import matplotlib.pyplot as plt
 import time
+import tqdm
+
 
 @numba.njit
 def get_new_walker(grid):
@@ -98,72 +100,109 @@ def run_dla_monte_carlo_experiments(N, sticking_prob=1):
     plt.rcParams.update({"font.size": 14})
 
     time_start = time.time()
-    grid = dla_monte_carlo(100, 1)
+    grid = dla_monte_carlo(10, 1)
     print("DLA Monte Carlo model simulation time: {:.2f} seconds.\n".format(time.time() - time_start))
 
-    fig = plt.figure()
-    ax = fig.add_subplot()
-    ax.matshow(grid.T, origin="lower", extent=[0., 1., 0., 1.])
-    ax.xaxis.tick_bottom()
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.yaxis.tick_left()
-    plt.savefig("DLA monte carlo 1")
-    plt.show()
+    # fig = plt.figure()
+    # ax = fig.add_subplot()
+    # ax.matshow(grid.T, origin="lower", extent=[0., 1., 0., 1.])
+    # ax.xaxis.tick_bottom()
+    # ax.set_xlabel("x")
+    # ax.set_ylabel("y")
+    # ax.yaxis.tick_left()
+    # plt.savefig("DLA monte carlo 1")
+    # plt.show()
 
-    fig, axs = plt.subplots(2, 2, sharey=True, sharex=True)
+    # fig, axs = plt.subplots(2, 2, sharey=True, sharex=True)
+    # plt.rcParams.update({"font.size": 14})
+    # im = None
+    # probabilities = [0.01, 0.05, 0.1, 0.5]
+    # for i, ax in enumerate(axs.flatten()):
+    #     im = ax.matshow(dla_monte_carlo(N, probabilities[i]).T, origin="lower", extent=[0., 1., 0., 1.])
+    #     ax.set_title("DLA $P_s={}$".format(probabilities[i]))
+    #
+    # # fig.colorbar(im, ax=axs.ravel().tolist())
+    # axs[1, 0].xaxis.tick_bottom()
+    # axs[1, 0].set_xlabel("x")
+    # axs[1, 1].xaxis.tick_bottom()
+    # axs[1, 1].set_xlabel("x")
+    # axs[1, 0].yaxis.tick_left()
+    # axs[1, 0].set_ylabel("y")
+    # axs[0, 0].yaxis.tick_left()
+    # axs[0, 0].set_ylabel("y")
+    # fig.tight_layout(pad=0)
+    # plt.savefig("DLA monte carlo Ps")
+    # plt.show()
+
+    time_start = time.time()
+
+    # object size as function of eta
+    ps = np.linspace(0.005, 1, 20) # np.linspace(0.005, 1, 25)
+    n_reps = 30 # 30
+    Ns = [10, 20]# 50, 100, 125]
+    plt.figure()
     plt.rcParams.update({"font.size": 14})
-    im = None
-    probabilities = [0.01, 0.05, 0.1, 0.5]
-    for i, ax in enumerate(axs.flatten()):
-        im = ax.matshow(dla_monte_carlo(N, probabilities[i]).T, origin="lower", extent=[0., 1., 0., 1.])
-        ax.set_title("DLA $P_s={}$".format(probabilities[i]))
+    # plt.title("DLA simulation object size over $\eta$, $N={}$".format(N))
+    fmts = ["^", "x", "v", "s", "+", "d"]
+    for j, N in enumerate(Ns):
+        grid_sizes = np.zeros((len(ps), n_reps))
+        for i, p in enumerate(ps):
+            print("\nSimulation with N = {}, ps = {}".format(N, p))
+            for rep in tqdm.tqdm(range(n_reps)):
+                grid = dla_monte_carlo(N, p)
 
-    # fig.colorbar(im, ax=axs.ravel().tolist())
-    axs[1, 0].xaxis.tick_bottom()
-    axs[1, 0].set_xlabel("x")
-    axs[1, 1].xaxis.tick_bottom()
-    axs[1, 1].set_xlabel("x")
-    axs[1, 0].yaxis.tick_left()
-    axs[1, 0].set_ylabel("y")
-    axs[0, 0].yaxis.tick_left()
-    axs[0, 0].set_ylabel("y")
-    fig.tight_layout(pad=0)
-    plt.savefig("DLA monte carlo Ps")
+                grid_sizes[i, rep] = np.sum(np.array([point for point in grid]))
+
+        # calculate statistics
+        grid_sizes_means = [np.mean(i) for i in grid_sizes]
+        grid_sizes_conf_int = [(np.std(i, ddof=1) * 1.96) / np.sqrt(n_reps) for i in grid_sizes]
+
+        plt.errorbar(ps, grid_sizes_means, yerr=grid_sizes_conf_int, capsize=3,
+                    fmt=fmts[j], zorder=0, label="$N={}$".format(N))
+
+    plt.xlabel("$P_s$")
+    plt.ylabel("Size of cluster")
+    # plt.yscale('log')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("results/DLA_mc/DLA_mc_var_ps_object_size.png")
+
+    print("DLA Monte Carlo model simulation time: {:.2f} seconds.\n".format(time.time() - time_start))
+
     plt.show()
-
-    sizes = []
-    times = []
-    ps = np.linspace(0.005, 0.5, 50)
-
-    # generate plot of the structure size over Ps. This takes quite long.
-    for p in ps:
-        # we will use this array to store temporary results
-        temp_sizes = []
-        temp_times = []
-
-        for i in range(5):
-            time_start = time.time()
-
-            grid = dla_monte_carlo(100, p)
-
-            temp_times.append(time.time()-time_start)
-
-            size = np.sum(grid)
-            temp_sizes.append(size)
-        sizes.append(np.mean(temp_sizes))
-        times.append(np.mean(temp_times))
-    fig = plt.figure()
-    plt.scatter(ps, sizes)
-    plt.xlabel('$P_s$')
-    plt.ylabel('Structure size')
-    plt.savefig("DLA monte carlo sizes")
-    
-    fig = plt.figure()
-    plt.plot(ps, times)
-    plt.xlabel('$P_s$')
-    plt.ylabel('Execution time (s)')
-    plt.savefig("DLA monte carlo times")
+    #
+    # sizes = []
+    # times = []
+    # ps = np.linspace(0.005, 0.5, 50)
+    #
+    # # generate plot of the structure size over Ps. This takes quite long.
+    # for p in ps:
+    #     # we will use this array to store temporary results
+    #     temp_sizes = []
+    #     temp_times = []
+    #
+    #     for i in range(5):
+    #         time_start = time.time()
+    #
+    #         grid = dla_monte_carlo(100, p)
+    #
+    #         temp_times.append(time.time()-time_start)
+    #
+    #         size = np.sum(grid)
+    #         temp_sizes.append(size)
+    #     sizes.append(np.mean(temp_sizes))
+    #     times.append(np.mean(temp_times))
+    # fig = plt.figure()
+    # plt.scatter(ps, sizes)
+    # plt.xlabel('$P_s$')
+    # plt.ylabel('Structure size')
+    # plt.savefig("DLA monte carlo sizes")
+    #
+    # fig = plt.figure()
+    # plt.plot(ps, times)
+    # plt.xlabel('$P_s$')
+    # plt.ylabel('Execution time (s)')
+    # plt.savefig("DLA monte carlo times")
 
 if __name__ == "__main__":
     run_dla_monte_carlo_experiments(100)

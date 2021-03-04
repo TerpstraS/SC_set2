@@ -133,20 +133,37 @@ def run_dla_monte_carlo_experiments(N, sticking_prob=1):
     plt.show()
 
     sizes = []
+    times = []
     ps = np.linspace(0.005, 0.5, 50)
+
+    # generate plot of the structure size over Ps. This takes quite long.
     for p in ps:
         # we will use this array to store temporary results
-        temp = []
+        temp_sizes = []
+        temp_times = []
+
         for i in range(5):
-            grid = dla_monte_carlo(N, p)
+            time_start = time.time()
+
+            grid = dla_monte_carlo(100, p)
+
+            temp_times.append(time.time()-time_start)
+
             size = np.sum(grid)
-            temp.append(size)
-        sizes.append(np.mean(temp))
+            temp_sizes.append(size)
+        sizes.append(np.mean(temp_sizes))
+        times.append(np.mean(temp_times))
     fig = plt.figure()
     plt.scatter(ps, sizes)
     plt.xlabel('$P_s$')
     plt.ylabel('Structure size')
+    plt.savefig("DLA monte carlo sizes")
+    
+    fig = plt.figure()
+    plt.plot(ps, times)
+    plt.xlabel('$P_s$')
+    plt.ylabel('Execution time (s)')
+    plt.savefig("DLA monte carlo times")
 
 if __name__ == "__main__":
     run_dla_monte_carlo_experiments(100)
-

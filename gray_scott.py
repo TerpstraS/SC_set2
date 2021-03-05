@@ -50,7 +50,7 @@ def discrete_diffusion(c_u, c_v, t_total, dt, dx, f, k, D_u, D_v):
     #     c_v = c_v_new
 
     delta = np.inf
-    eps = 1e-5
+    eps = 1e-6
     n_iters = 0
     while delta > eps:
         n_iters += 1
@@ -272,8 +272,8 @@ def gray_scott():
     dx = 1
     f = 0.035   # 0.060
     k = 0.060
-    D_u = 0.12
-    D_v = 0.06
+    D_u = 0.16
+    D_v = 0.08
 
     # perform algorithm
     time_start = time.time()
@@ -297,15 +297,51 @@ def gray_scott():
     plt.colorbar()
     plt.show()
     return
-    plt.savefig("./results/gray_scott/gray_scott_c_u_plus_c_v.png")
 
-    # plot two outcomes in one plot
+
+def gray_scott_experiments():
+
+    N = 100
+    t_total = 15000
+    noise_stddev = None # 0.01
+    size_square_v = 30
+
+    # default parameters
     dt = 1
     dx = 1
     f = 0.035   # 0.060
     k = 0.060
-    D_u = 0.12
-    D_v = 0.06
+    D_u = 0.16
+    D_v = 0.08
+
+    # perform algorithm
+    time_start = time.time()
+    c_u, c_v = run_gray_scott(N, size_square_v, dt, dx, f, k, D_u, D_v, t_total=t_total,
+                              noise_stddev=noise_stddev, anim=False, verbose=False, plot_init=False)
+    print("Gray-Scott model simulation time: {:.2f} seconds.\n".format(time.time() - time_start))
+
+    # plot final concentrations
+    plt.matshow(c_u)
+    plt.title("Final concentration of U\n")
+    plt.colorbar()
+    # plt.savefig("./results/gray_scott/gray_scott_c_u.png")
+
+    plt.matshow(c_v)
+    plt.title("Final concentration of V\n")
+    plt.colorbar()
+    # plt.savefig("./results/gray_scott/gray_scott_c_v.png")
+
+    plt.matshow(c_u+c_v)
+    plt.title("Total concentration of $U+V$\n")
+    plt.colorbar()
+    plt.show()
+
+    dt = 1
+    dx = 1
+    f = 0.035   # 0.060
+    k = 0.060
+    D_u = 0.16
+    D_v = 0.08
 
     c_u, c_v = run_gray_scott(N, size_square_v, dt, dx, f, k, D_u, D_v, t_total=t_total,
                               noise_stddev=noise_stddev, anim=False, verbose=False, plot_init=False)
@@ -313,19 +349,44 @@ def gray_scott():
     fig, axs = plt.subplots(2, 2, sharey=True, sharex=True)
     plt.rcParams.update({"font.size": 14})
     im = None
-    fs = [0.035, 0.035, 0.03, 0.03]
+    # fs = [0.03, 0.03, 0.03, 0.03]
+    # ks = [0.055, 0.055, 0.055, 0.055]
+    # D_us = [0.15, 0.15, 0.15, 0.15]
+    # D_vs = [0.08, 0.08, 0.08, 0.08]
+    fs = [0.035, 0.035, 0.035, 0.035]
+    ks = [0.060, 0.060, 0.060, 0.060]
+    D_us = [0.2, 0.2, 0.2, 0.2]
+    D_vs = [0.09, 0.09, 0.09, 0.09]
     for i, ax in enumerate(axs.flatten()):
-        c_u, c_v = run_gray_scott(N, size_square_v, dt, dx, fs[i], k, D_u, D_v, t_total=t_total,
-                                  noise_stddev=None, anim=False, verbose=False, plot_init=False)
-        if i % 2 == 0:
+        if i == 0:
+            c_u, c_v = run_gray_scott(N, size_square_v, dt, dx, fs[i], ks[i], D_us[i], D_vs[i], t_total=t_total,
+                                      noise_stddev=None, anim=False, verbose=False, plot_init=False)
             im = ax.matshow(c_u.T, origin="lower", extent=[0., 1., 0., 1.])
-            ax.set_title("U, $f={}$".format(fs[i]))
+            ax.set_title("U")
             divider = make_axes_locatable(ax)
             cax = divider.append_axes('right', size='10%', pad=0.1)
             fig.colorbar(im, cax=cax, orientation="vertical")
-        else:
+        elif i == 1:
+            c_u, c_v = run_gray_scott(N, size_square_v, dt, dx, fs[i], ks[i], D_us[i], D_vs[i], t_total=t_total,
+                                      noise_stddev=None, anim=False, verbose=False, plot_init=False)
             im = ax.matshow(c_v.T, origin="lower", extent=[0., 1., 0., 1.])
-            ax.set_title("V, $f={}$".format(fs[i]))
+            ax.set_title("V")
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes('right', size='10%', pad=0.1)
+            fig.colorbar(im, cax=cax, orientation="vertical")
+        if i == 2:
+            c_u, c_v = run_gray_scott(N, size_square_v, dt, dx, fs[i], ks[i], D_us[i], D_vs[i], t_total=t_total,
+                                      noise_stddev=0.05, anim=False, verbose=False, plot_init=False)
+            im = ax.matshow(c_u.T, origin="lower", extent=[0., 1., 0., 1.])
+            ax.set_title("U noise")
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes('right', size='10%', pad=0.1)
+            fig.colorbar(im, cax=cax, orientation="vertical")
+        elif i == 3:
+            c_u, c_v = run_gray_scott(N, size_square_v, dt, dx, fs[i], ks[i], D_us[i], D_vs[i], t_total=t_total,
+                                      noise_stddev=0.05, anim=False, verbose=False, plot_init=False)
+            im = ax.matshow(c_v.T, origin="lower", extent=[0., 1., 0., 1.])
+            ax.set_title("V noise")
             divider = make_axes_locatable(ax)
             cax = divider.append_axes('right', size='10%', pad=0.1)
             fig.colorbar(im, cax=cax, orientation="vertical")
@@ -340,7 +401,7 @@ def gray_scott():
     axs[0, 0].yaxis.tick_left()
     axs[0, 0].set_ylabel("y")
     fig.tight_layout(pad=0)
-    plt.savefig("results/gray_scott/varying_init.png")
+    plt.savefig("results/gray_scott/varying_init_not_default2.png")
 
     plt.show()
 
@@ -348,4 +409,4 @@ def gray_scott():
 
 
 if __name__ == '__main__':
-    gray_scott()
+    gray_scott_experiments()
